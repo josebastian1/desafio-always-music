@@ -17,7 +17,11 @@ const pool = new Pool(config);
 const nuevoEstudiante = async (rut, nombre, curso, nivel) => {
     const client = await pool.connect();
     try {
-        const result = await client.query('INSERT INTO ESTUDIANTES (RUT, NOMBRE, CURSO, NIVEL) VALUES ($1, $2, $3, $4)', [rut, nombre, curso, nivel]);
+        const query = {
+            text: 'INSERT INTO ESTUDIANTES (RUT, NOMBRE, CURSO, NIVEL) VALUES ($1, $2, $3, $4)',
+            values: [rut, nombre, curso, nivel]
+        };
+        const result = await client.query(query);
         console.log('Estudiante registrado correctamente:', result.rowCount);
     } catch (err) {
         console.error('Error al registrar estudiante:', err.message);
@@ -27,11 +31,14 @@ const nuevoEstudiante = async (rut, nombre, curso, nivel) => {
 };
 
 // Consulta estudiante por rut
-
 const consultaPorRut = async (rut) => {
     const client = await pool.connect();
     try {
-        const result = await client.query('SELECT * FROM ESTUDIANTES WHERE RUT = $1', [rut]);
+        const query = {
+            text: 'SELECT * FROM ESTUDIANTES WHERE RUT = $1',
+            values: [rut]
+        };
+        const result = await client.query(query);
         if (result.rows.length === 0) {
             console.log('No existe un estudiante con el RUT seleccionado');
         } else {
@@ -45,11 +52,13 @@ const consultaPorRut = async (rut) => {
 };
 
 // Consulta que devuelve todos los estudiantes
-
 const consultarLista = async () => {
     const client = await pool.connect();
     try {
-        const result = await client.query('SELECT * FROM ESTUDIANTES');
+        const query = {
+            text: 'SELECT * FROM ESTUDIANTES'
+        };
+        const result = await client.query(query);
         console.log('Estudiantes registrados:', result.rows);
     } catch (err) {
         console.error('Error al obtener todos los estudiantes:', err.message);
@@ -59,11 +68,14 @@ const consultarLista = async () => {
 };
 
 // Actualizar información del estudiante
-
 const actualizarEstudiante = async (rut, nombre, curso, nivel) => {
     const client = await pool.connect();
     try {
-        const result = await client.query('UPDATE ESTUDIANTES SET NOMBRE = $1, CURSO = $2, NIVEL = $3 WHERE RUT = $4', [nombre, curso, nivel, rut]);
+        const query = {
+            text: 'UPDATE ESTUDIANTES SET NOMBRE = $1, CURSO = $2, NIVEL = $3 WHERE RUT = $4',
+            values: [nombre, curso, nivel, rut]
+        };
+        const result = await client.query(query);
         if (result.rowCount === 0) {
             console.log('Estudiante no encontrado para actualizar');
         } else {
@@ -77,11 +89,14 @@ const actualizarEstudiante = async (rut, nombre, curso, nivel) => {
 };
 
 // Eliminar un estudiante según su rut
-
 const eliminarEstudiante = async (rut) => {
     const client = await pool.connect();
     try {
-        const result = await client.query('DELETE FROM ESTUDIANTES WHERE RUT = $1', [rut]);
+        const query = {
+            text: 'DELETE FROM ESTUDIANTES WHERE RUT = $1',
+            values: [rut]
+        };
+        const result = await client.query(query);
         if (result.rowCount === 0) {
             console.log('Estudiante no encontrado para eliminar');
         } else {
@@ -95,58 +110,53 @@ const eliminarEstudiante = async (rut) => {
 };
 
 // Ejecución de los comandos
-
 const ejecutarComando = async (argv) => {
-    const comando = argv[2];
+    try {
+        const comando = argv[2];
 
-    switch (comando) {
-        case 'nuevo':
-            const rut = argv[3];
-            const nombre = argv[4];
-            const curso = argv[5];
-            const nivel = argv[6];
-            if (rut && nombre && curso && nivel) {
-                await nuevoEstudiante(rut, nombre, curso, nivel);
-            } else {
-                console.error('Faltan argumentos para registrar estudiante');
-            }
-            break;
-        case 'rut':
-            const rutConsulta = argv[3];
-            if (rutConsulta) {
-                await consultaPorRut(rutConsulta);
-            } else {
-                console.error('Debe proporcionar un RUT para consultar estudiante');
-            }
-            break;
-        case 'consulta':
-            await consultarLista();
-            break;
-        case 'editar':
-            const rutActualizar = argv[3];
-            const nombreActualizar = argv[4];
-            const cursoActualizar = argv[5];
-            const nivelActualizar = argv[6];
-            if (rutActualizar && nombreActualizar && cursoActualizar && nivelActualizar) {
-                await actualizarEstudiante(rutActualizar, nombreActualizar, cursoActualizar, nivelActualizar);
-            } else {
-                console.error('Faltan argumentos para actualizar estudiante');
-            }
-            break;
-        case 'eliminar':
-            const rutEliminar = argv[3];
-            if (rutEliminar) {
-                await eliminarEstudiante(rutEliminar);
-            } else {
-                console.error('Debe proporcionar un RUT para eliminar estudiante');
-            }
-            break;
-        default:
-            console.error('Comando no reconocido');
-            break;
+        switch (comando) {
+            case 'nuevo':
+                const [rut, nombre, curso, nivel] = argv.slice(3);
+                if (rut && nombre && curso && nivel) {
+                    await nuevoEstudiante(rut, nombre, curso, nivel);
+                } else {
+                    console.error('Faltan argumentos para registrar estudiante');
+                }
+                break;
+            case 'rut':
+                const rutConsulta = argv[3];
+                if (rutConsulta) {
+                    await consultaPorRut(rutConsulta);
+                } else {
+                    console.error('Debe proporcionar un RUT para consultar estudiante');
+                }
+                break;
+            case 'consulta':
+                await consultarLista();
+                break;
+            case 'editar':
+                const [rutActualizar, nombreActualizar, cursoActualizar, nivelActualizar] = argv.slice(3);
+                if (rutActualizar && nombreActualizar && cursoActualizar && nivelActualizar) {
+                    await actualizarEstudiante(rutActualizar, nombreActualizar, cursoActualizar, nivelActualizar);
+                } else {
+                    console.error('Faltan argumentos para actualizar estudiante');
+                }
+                break;
+            case 'eliminar':
+                const rutEliminar = argv[3];
+                if (rutEliminar) {
+                    await eliminarEstudiante(rutEliminar);
+                } else {
+                    console.error('Debe proporcionar un RUT para eliminar estudiante');
+                }
+                break;
+            default:
+                console.error('Comando no reconocido');
+                break;
+        }
+    } catch (err) {
+        console.error('Error al ejecutar el comando:', err.message);
     }
 };
-
-
 
 ejecutarComando(process.argv);
